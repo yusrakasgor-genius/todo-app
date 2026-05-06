@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo Uygulaması</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 16px;
+    }
+
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 480px;
+      overflow: hidden;
+    }
+
+    .header {
+      background: #4f46e5;
+      color: #fff;
+      padding: 24px;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .header p {
+      font-size: 0.875rem;
+      opacity: 0.8;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 8px;
+      padding: 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .input-area input {
+      flex: 1;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-area input:focus {
+      border-color: #4f46e5;
+    }
+
+    .input-area button {
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .input-area button:hover {
+      background: #4338ca;
+    }
+
+    .input-area button:disabled {
+      background: #a5b4fc;
+      cursor: not-allowed;
+    }
+
+    .filters {
+      display: flex;
+      gap: 4px;
+      padding: 12px 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .filters button {
+      flex: 1;
+      padding: 6px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 6px;
+      background: #fff;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #6b7280;
+      transition: all 0.2s;
+    }
+
+    .filters button.active {
+      background: #4f46e5;
+      border-color: #4f46e5;
+      color: #fff;
+    }
+
+    .todo-list {
+      list-style: none;
+      min-height: 60px;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      border-bottom: 1px solid #f3f4f6;
+      transition: background 0.15s;
+    }
+
+    .todo-item:hover {
+      background: #fafafa;
+    }
+
+    .todo-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #4f46e5;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .todo-item span {
+      flex: 1;
+      font-size: 0.95rem;
+      color: #111827;
+      word-break: break-word;
+    }
+
+    .todo-item.done span {
+      text-decoration: line-through;
+      color: #9ca3af;
+    }
+
+    .todo-item .delete-btn {
+      background: none;
+      border: none;
+      color: #d1d5db;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .todo-item .delete-btn:hover {
+      color: #ef4444;
+    }
+
+    .todo-item.loading {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: #9ca3af;
+      font-size: 0.9rem;
+    }
+
+    .error-banner {
+      background: #fef2f2;
+      color: #dc2626;
+      padding: 10px 20px;
+      font-size: 0.85rem;
+      border-bottom: 1px solid #fecaca;
+      display: none;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .footer button {
+      background: none;
+      border: none;
+      color: #ef4444;
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .footer button:hover {
+      text-decoration: underline;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #e5e7eb;
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Todo Listesi</h1>
+      <p id="date"></p>
+    </div>
+
+    <div class="error-banner" id="error-banner"></div>
+
+    <div class="input-area">
+      <input type="text" id="todo-input" placeholder="Yeni görev ekle..." maxlength="200">
+      <button id="add-btn" title="Ekle">+</button>
+    </div>
+
+    <div class="filters">
+      <button class="active" data-filter="all">Tümü</button>
+      <button data-filter="active">Aktif</button>
+      <button data-filter="done">Tamamlanan</button>
+    </div>
+
+    <ul class="todo-list" id="todo-list">
+      <li class="empty"><span class="spinner"></span> Yükleniyor...</li>
+    </ul>
+
+    <div class="footer">
+      <span id="remaining"></span>
+      <button id="clear-done">Tamamlananları sil</button>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://rrhxtgjjkrfbfmyklxcv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyaHh0Z2pqa3JmYmZteWtseGN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTAyNTEsImV4cCI6MjA5MzY2NjI1MX0.frTBhaT3LjTwjMpX3zHDr_vMP4OX0Sku7HsViSb-cfI';
+
+    const headers = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    };
+
+    async function api(method, path, body) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `HTTP ${res.status}`);
+      }
+      if (res.status === 204) return null;
+      return res.json();
+    }
+
+    // State
+    const input = document.getElementById('todo-input');
+    const addBtn = document.getElementById('add-btn');
+    const listEl = document.getElementById('todo-list');
+    const remainingEl = document.getElementById('remaining');
+    const clearDoneBtn = document.getElementById('clear-done');
+    const errorBanner = document.getElementById('error-banner');
+    const filterBtns = document.querySelectorAll('.filters button');
+
+    let todos = [];
+    let filter = 'all';
+
+    document.getElementById('date').textContent = new Date().toLocaleDateString('tr-TR', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    function showError(msg) {
+      errorBanner.textContent = msg;
+      errorBanner.style.display = 'block';
+      setTimeout(() => { errorBanner.style.display = 'none'; }, 4000);
+    }
+
+    function render() {
+      const visible = todos.filter(t =>
+        filter === 'all' ? true : filter === 'done' ? t.done : !t.done
+      );
+
+      if (visible.length === 0) {
+        listEl.innerHTML = '<li class="empty">Görev yok</li>';
+      } else {
+        listEl.innerHTML = visible.map(t => `
+          <li class="todo-item ${t.done ? 'done' : ''}" data-id="${t.id}">
+            <input type="checkbox" ${t.done ? 'checked' : ''}>
+            <span>${escapeHtml(t.text)}</span>
+            <button class="delete-btn" title="Sil">✕</button>
+          </li>
+        `).join('');
+      }
+
+      const activeCount = todos.filter(t => !t.done).length;
+      remainingEl.textContent = `${activeCount} görev kaldı`;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    async function loadTodos() {
+      try {
+        todos = await api('GET', '/todos?order=created_at.desc');
+        render();
+      } catch (e) {
+        showError('Görevler yüklenemedi: ' + e.message);
+        listEl.innerHTML = '<li class="empty">Yükleme hatası</li>';
+      }
+    }
+
+    async function addTodo() {
+      const text = input.value.trim();
+      if (!text) return;
+      addBtn.disabled = true;
+      try {
+        const [created] = await api('POST', '/todos', { text, done: false });
+        todos.unshift(created);
+        input.value = '';
+        render();
+      } catch (e) {
+        showError('Görev eklenemedi: ' + e.message);
+      } finally {
+        addBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    async function toggleTodo(id, done) {
+      const item = listEl.querySelector(`[data-id="${id}"]`);
+      if (item) item.classList.add('loading');
+      try {
+        await api('PATCH', `/todos?id=eq.${id}`, { done });
+        const todo = todos.find(t => t.id === id);
+        if (todo) todo.done = done;
+        render();
+      } catch (e) {
+        showError('Güncelleme başarısız: ' + e.message);
+        render();
+      }
+    }
+
+    async function deleteTodo(id) {
+      const item = listEl.querySelector(`[data-id="${id}"]`);
+      if (item) item.classList.add('loading');
+      try {
+        await api('DELETE', `/todos?id=eq.${id}`);
+        todos = todos.filter(t => t.id !== id);
+        render();
+      } catch (e) {
+        showError('Silme başarısız: ' + e.message);
+        render();
+      }
+    }
+
+    async function clearDone() {
+      const doneIds = todos.filter(t => t.done).map(t => t.id);
+      if (!doneIds.length) return;
+      try {
+        await api('DELETE', `/todos?done=eq.true`);
+        todos = todos.filter(t => !t.done);
+        render();
+      } catch (e) {
+        showError('Silme başarısız: ' + e.message);
+      }
+    }
+
+    addBtn.addEventListener('click', addTodo);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
+
+    listEl.addEventListener('change', e => {
+      if (e.target.type === 'checkbox') {
+        const id = +e.target.closest('.todo-item').dataset.id;
+        toggleTodo(id, e.target.checked);
+      }
+    });
+
+    listEl.addEventListener('click', e => {
+      if (e.target.classList.contains('delete-btn')) {
+        const id = +e.target.closest('.todo-item').dataset.id;
+        deleteTodo(id);
+      }
+    });
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filter = btn.dataset.filter;
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        render();
+      });
+    });
+
+    clearDoneBtn.addEventListener('click', clearDone);
+
+    loadTodos();
+  </script>
+</body>
+</html>
