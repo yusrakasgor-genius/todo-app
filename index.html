@@ -643,7 +643,7 @@
     addBtn.disabled = true;
     try {
       const data = await sbFetch('POST', '/todos',
-        { text, done: false, user_id: null });
+        { text, done: false });
       todos.unshift(Array.isArray(data) ? data[0] : data);
       todoInput.value = '';
       render();
